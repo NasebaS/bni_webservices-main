@@ -15,6 +15,11 @@ const addorUpdateFeeCollectionRoute = require("./routes/feeCollection/create-upd
 const getLedgerRoute = require("./routes/ledger/get-ledger");
 const getLedgerSummaryRoute = require("./routes/ledger/get-ledger-summary");
 
+const ledgerRoutes = require("./routes/ledger/ledger-routes");
+
+
+
+
 var app = express();
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -40,6 +45,8 @@ app.use("/getLedger", getLedgerRoute);
 app.use("/getLedgerSummary", getLedgerSummaryRoute);
 app.use("/mirthApi", MirthRoute);
 app.use("/mirthCollectionApi", MirthCollectionRoute);
+
+app.use("/api/ledger", ledgerRoutes);
 
 
 app.listen(3000);
