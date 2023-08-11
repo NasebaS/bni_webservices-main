@@ -16,18 +16,19 @@ const getLedgerRoute = require("./routes/ledger/get-ledger");
 const getLedgerSummaryRoute = require("./routes/ledger/get-ledger-summary");
 
 const ledgerRoutes = require("./routes/ledger/ledger-routes");
-
+const ledgerNames = require("./routes/ledgernames");
+const incomeExpenseRoutes = require("./routes/incomeexpense/incomeexpense-routes");
 
 
 
 var app = express();
 const corsOptions = {
-  origin: "http://localhost:3000",
-  credentials: false,
+  origin: "http://localhost:4200",
+  credentials: true,
   optionSuccessStatus: 200,
 };
 app.use(cors());
-
+app.use(cors(corsOptions));
 app.use(express.static("http://192.168.1.23/images"));
 app.use('/images', express.static('images'));
 app.use(bodyParser.json());
@@ -47,6 +48,7 @@ app.use("/mirthApi", MirthRoute);
 app.use("/mirthCollectionApi", MirthCollectionRoute);
 
 app.use("/api/ledger", ledgerRoutes);
-
+app.use("/ledgernames", ledgerNames);
+app.use("/api/expense", incomeExpenseRoutes);
 
 app.listen(3000);

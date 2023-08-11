@@ -3,7 +3,7 @@ const Ledger = require("../models/ledger");
 
 exports.getAllLedgers = async (req, res) => {
   try {
-    const ledgers = await Ledger.findAll(); // Fetch all ledgers from the database
+    const ledgers = await Ledger.findAll(); 
     res.status(200).json({ status: APIResponse.Success, data: ledgers });
   } catch (error) {
     res.status(500).json({ status: APIResponse.ServerError, message: error.message });

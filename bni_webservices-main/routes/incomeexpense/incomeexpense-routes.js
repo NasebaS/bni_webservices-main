@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const moment = require('moment'); 
 var mysqlConnection = require('../../connection');
 
 const APIResponse = {
@@ -8,53 +8,57 @@ const APIResponse = {
   Failed: 1,
   ServerError: 2
 }
-const getLedgerList = 'SELECT * FROM ledger_master ';
-// Get all ledgers
+const getExpenseList = 'SELECT * FROM income_expense_entry ';
+
 router.get("/", (req, res) => {
-    mysqlConnection.query(getLedgerList, (err, ledgerRows) => {
+    mysqlConnection.query(getExpenseList, (err, expenseRows) => {
       if (err) {
         let response = {
           "status": APIResponse.ServerError,
-          "ledgerList": []
+          "expenseList": []
       }
       res.send(response);
       } else {
         let response = {
           "status": APIResponse.Success,
-          "ledgerList": ledgerRows
+          "expenseList": expenseRows
       }
       res.send(response);
       }
     });
 });
 
-// Create a new ledger
+// Create a new expense entry
 router.post("/", (req, res) => {
-    const { ledger_name, ledger_type,status } = req.body;
+    const { date, refnum, ledgername, income, amount, notes } = req.body;
+  
+    // Parse the date string using moment.js
+    const parsedDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
+  
     mysqlConnection.query(
-      "INSERT INTO ledger_master (ledger_name, ledger_type,status) VALUES (?, ?, ?)",
-      [ledger_name, ledger_type,status],
+      "INSERT INTO income_expense_entry (entry_date, refnum, ledgername, income, amount, notes) VALUES (?, ?, ?, ?, ?, ?)",
+      [parsedDate, refnum, ledgername, income, amount, notes],
       (err, result) => {
         if (err) {
-          console.log(err)
+          console.log(err);
           let response = {
             "status": APIResponse.ServerError,
-            message: "Error creating ledger"
-           }
-       
-           res.send(response);
+            message: "Error creating Expense entry"
+          };
+  
+          res.send(response);
         } else {
           let response = {
             "status": APIResponse.Success,
-            message: "Ledger created successfully"
-           }
-        
-           res.send(response);
+            message: "Expense Entry created successfully"
+          };
+  
+          res.send(response);
         }
       }
     );
-});
-
+  });
+  
 // Update a ledger
 router.put("/:ledgerId", (req, res) => {
     const ledgerId = req.params.ledgerId;
