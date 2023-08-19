@@ -8,36 +8,40 @@ const APIResponse = {
   Failed: 1,
   ServerError: 2
 }
-const getExpenseList = 'SELECT * FROM income_expense_entry ';
+
 
 router.get("/", (req, res) => {
-    mysqlConnection.query(getExpenseList, (err, expenseRows) => {
-      if (err) {
-        let response = {
-          "status": APIResponse.ServerError,
-          "expenseList": []
-      }
+  const getExpenseList = 'SELECT * FROM income_expense_entry ORDER BY entry_id DESC';
+ 
+  
+  mysqlConnection.query(getExpenseList, (err, expenseRows) => {
+    
+    if (err) {
+      let response = {
+        "status": APIResponse.ServerError,
+        "expenseList": [],
+        "error":err
+      };
       res.send(response);
-      } else {
-        let response = {
-          "status": APIResponse.Success,
-          "expenseList": expenseRows
-      }
+    } else {
+      let response = {
+        "status": APIResponse.Success,
+        "expenseList": expenseRows
+      };
       res.send(response);
-      }
-    });
+    }
+  });
 });
 
 // Create a new expense entry
 router.post("/", (req, res) => {
-    const { date, refnum, ledgername, income, amount, notes } = req.body;
+    const { ledger_id,entry_date, refnum, ledgername, type, amount, notes } = req.body;
   
-    // Parse the date string using moment.js
-    const parsedDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
-  
+ 
+    const formattedEntryDate = entry_date.slice(0, 10);
     mysqlConnection.query(
-      "INSERT INTO income_expense_entry (entry_date, refnum, ledgername, income, amount, notes) VALUES (?, ?, ?, ?, ?, ?)",
-      [parsedDate, refnum, ledgername, income, amount, notes],
+      "INSERT INTO income_expense_entry (ledger_id,entry_date, refnum, ledgername, type, amount, notes) VALUES (?,?, ?, ?, ?, ?, ?)",
+      [ledger_id,formattedEntryDate, refnum, ledgername, type, amount, notes],
       (err, result) => {
         if (err) {
           console.log(err);
@@ -60,40 +64,53 @@ router.post("/", (req, res) => {
   });
   
 // Update a ledger
-router.put("/:ledgerId", (req, res) => {
-    const ledgerId = req.params.ledgerId;
-    const { ledger_name, ledger_type, status } = req.body;
-    mysqlConnection.query(
-      "UPDATE ledger_master SET ledger_name=?, ledger_type=?, status=? WHERE ledger_id=?",
-      [ledger_name, ledger_type, status, ledgerId],
-      (err, result) => {
-        if (err) {
-          console.log(err)
-          res.status(500).json({ message: "Error updating ledger" });
-        } else {
-          res.status(200).json({ message: "Ledger updated successfully" });
-        }
+
+router.put("/:entry_id", (req, res) => {
+  const entry_id = req.params.entry_id;
+  const { ledger_id, entry_date, refnum, ledgername, type, amount, notes } = req.body;
+
+  mysqlConnection.query(
+    "UPDATE income_expense_entry SET ledger_id=?, entry_date=?, refnum=?, ledgername=?, type=?, amount=?, notes=? WHERE entry_id=?",
+
+    [ledger_id, entry_date, refnum, ledgername, type, amount, notes,entry_id],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        let response = {
+          "status": APIResponse.ServerError,
+          message: "Error updating expense entry"
+        };
+
+        res.status(500).send(response); // Use res.status().send()
+      } else {
+        let response = {
+          "status": APIResponse.Success,
+          message: "Expense Entry updated successfully"
+        };
+
+        res.send(response);
       }
-    );
+    }
+  );
 });
 
 // Delete a ledger
-router.delete("/:ledgerId", (req, res) => {
-  const ledgerId = req.params.ledgerId;
+router.delete("/:entry_id", (req, res) => {
+  const entry_id = req.params.entry_id;
 
-  const sqlQuery = "UPDATE ledger_master SET status='Inactive' WHERE ledger_id=? AND status='Active'";
+  const sqlQuery = "DELETE FROM income_expense_entry WHERE entry_id = ?";
 
 
-  mysqlConnection.query(sqlQuery, [ledgerId], (err, result) => {
+  mysqlConnection.query(sqlQuery, [entry_id], (err, result) => {
     if (err) {
-      console.error("Error updating ledger status:", err);
-      res.status(500).json({ message: "Error updating ledger status" });
+     
+      res.status(500).json({ message: "Error Deleting Expense Entry",err });
     } else {
-      console.log("Query Result:", result);
+      // console.log("Query Result:", result);
       if (result.affectedRows > 0) {
-        res.status(200).json({ message: "Ledger deleted successfully" });
+        res.status(200).json({ message: "Expense Entry deleted successfully" });
       } else {
-        res.status(404).json({ message: "No active ledger found for status update" });
+        res.status(404).json({ message: "No active entries found for deletion" });
       }
     }
   });
